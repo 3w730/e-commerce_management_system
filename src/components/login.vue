@@ -47,7 +47,7 @@ export default {
     login_ () {
       this.$refs.Login_form_ref.validate((valid) => {
         if (valid) {
-          this.$http.post('login', this.LoginForm).then(res => {
+          this.axios.post('login', this.LoginForm).then(res => {
             console.log(res)
             if (res.data.meta.status !== 200) return this.$Message.error('用户名或或密码错误，登陆失败')
             this.$Message.success('登陆成功')
