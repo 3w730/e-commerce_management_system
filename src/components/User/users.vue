@@ -63,7 +63,7 @@
               <el-button type="danger" icon="el-icon-delete" size="mini" @click="removeUser(scope.row.id)"></el-button>
             </el-tooltip>
             <el-tooltip class="item" effect="dark" content="分配权限" placement="top" :enterable="false">
-              <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
+              <el-button type="warning" icon="el-icon-setting" size="mini" @click="showAssignRightsDialog(scope.row)"></el-button>
             </el-tooltip>
           </template>
         </el-table-column>
@@ -79,7 +79,7 @@
     </el-pagination>
     </el-card>
 
-    <el-dialog title="提示" :visible.sync="editDialogVisible" width="50%" >
+    <el-dialog title="修改用户信息" :visible.sync="editDialogVisible" width="50%" @close="clearEditDialog">
      <span>
        <el-form :model="editUserForm" :rules="rules" ref="editUserFormRef" label-width="100px" class="demo-ruleForm">
         <el-form-item label="用户名" prop="username" >
@@ -97,6 +97,23 @@
        <el-button @click="editDialogVisible = false">取 消</el-button>
        <el-button type="primary" @click="editUser">确 定</el-button>
      </span>
+    </el-dialog>
+
+    <el-dialog title="分配权限" :visible.sync="assignRightsDialog" width="50%">
+      <div>
+        <p>当前用户：{{userInfo.username}}</p>
+        <p>当前角色：{{userInfo.role_name}}</p>
+        <p>分配新角色：
+          <el-select v-model="selectedRoleId" placeholder="请选择">
+            <el-option v-for="item in roleList" :key="item.id" :label="item.roleName" :value="item.id">
+            </el-option>
+          </el-select>
+        </p>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="assignRightsDialog = false">取 消</el-button>
+        <el-button type="primary" @click="saveNewRole">确 定</el-button>
+      </span>
     </el-dialog>
   </div>
 </template>
@@ -156,7 +173,11 @@ export default {
           { required: true, message: '请输入手机号', trigger: 'blur' },
           { validator: mobileCheck, trigger: 'blur' }
         ]
-      }
+      },
+      assignRightsDialog: false,
+      userInfo: {},
+      roleList: [],
+      selectedRoleId: ''
     }
   },
   created () {
@@ -191,7 +212,7 @@ export default {
       this.initUser()
     },
     addDialogClosed () {
-      this.$refs.addUserFormRef.resetFields()
+      this.$refs.editUserFormRef.resetFields()
     },
     addUser () {
       this.$refs.addUserFormRef.validate(valid => {
@@ -236,6 +257,9 @@ export default {
         }
       })
     },
+    clearEditDialog () {
+      this.$refs.editUserFormRef.resetFields()
+    },
     removeUser (id) {
       this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
         confirmButtonText: '确定',
@@ -245,13 +269,35 @@ export default {
         this.axios.delete(`users/${id}`).then(res => {
           if (res.data.meta.status === 200) {
             this.$Message.success('删除成功')
-            this.initUser()
           }
         })
       }).catch(() => {
-        console.log('取消删除了')
         return true
       })
+    },
+    showAssignRightsDialog (userInfo) {
+      this.userInfo = userInfo
+      this.axios.get('roles').then(res => {
+        this.roleList = res.data.data
+      })
+      this.assignRightsDialog = true
+    },
+    saveNewRole () {
+      if (!this.selectedRoleId) {
+        return this.$Message.error('请选择要分配的角色')
+      } else {
+        this.axios.put(`users/${this.userInfo.id}/role`, {
+          rid: this.selectedRoleId
+        }).then(res => {
+          if (res.data.meta.status === 200) {
+            this.assignRightsDialog = false
+            this.initUser()
+            return this.$Message.success('分配角色成功！')
+          } else {
+            return this.$Message.error(res.data.meta.msg)
+          }
+        })
+      }
     }
   }
 }
