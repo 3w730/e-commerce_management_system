@@ -129,6 +129,7 @@ export default {
   },
   methods: {
     getCateList () {
+      console.log(this.queryInfo.pagenum)
       this.axios.get('categories', { params: this.queryInfo }).then(res => {
         this.cateList = res.data.data.result
         this.total = res.data.data.total
@@ -193,16 +194,18 @@ export default {
       })
     },
     delCate (Cate) {
-      console.log(Cate)
       this.$confirm('此操作将永久删除该分类, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-        // 这里个（）写个形参会报错
       }).then(() => {
         this.axios.delete(`categories/${Cate.cat_id}`).then(res => {
           if (res.data.meta.status === 200) {
             this.$Message.success(res.data.meta.msg)
+            this.total--
+            if (this.total % this.queryInfo.pagesize === 0) {
+              this.queryInfo.pagenum--
+            }
             this.getCateList()
           } else {
             this.$Message.error('删除失败')

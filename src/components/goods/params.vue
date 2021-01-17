@@ -214,7 +214,6 @@ export default {
         type: 'warning'
       }).then(() => {
         this.axios.delete(`categories/${this.cateId}/attributes/${id}`).then(res => {
-          console.log(res)
           if (res.data.meta.status === 200) {
             this.getParamsList()
             this.$Message.success('删除成功')
@@ -293,4 +292,5 @@ export default {
 .tag{
   margin: 5px 8px;
 }
+
 </style>
